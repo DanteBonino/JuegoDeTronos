@@ -1,0 +1,1 @@
+const noSePuedeConsumarElCasamientoException = new Exception(message = "No se puede consumar el casamiento porque alguna de las casas los prohíbe")

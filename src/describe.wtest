@@ -1,0 +1,179 @@
+import Casa.*
+import Personaje.*
+import excepciones.*
+
+const solteroLanister = new Personaje(casa = lannister)
+const casadoLanister  = new Personaje(casa = lannister, conyuges = [1])
+const stark1          = new Personaje(casa = stark)
+const stark2          = new Personaje(casa = stark)
+const guardia         = new Personaje(casa = guardiaDeLaNoche)
+const personajeMuerto = new Personaje(casa = new Casa(patrimonio = 1000000), estaVivo = false)
+
+describe "Punto 1" {
+
+	test "Un lannister soltero se puede casa" {
+		assert.that(lannister.sePuedeCasarCon(solteroLanister, casadoLanister))
+	}
+	
+	test "Un lannister casado no se puede casar con nadie"{
+		assert.notThat(lannister.sePuedeCasarCon(casadoLanister, solteroLanister))
+		assert.notThat(lannister.sePuedeCasarCon(casadoLanister, stark1))
+		assert.notThat(lannister.sePuedeCasarCon(casadoLanister, stark2))
+		assert.notThat(lannister.sePuedeCasarCon(casadoLanister, guardia))
+	}
+	
+	test "Un stark se puede casar con todos, menos con un stark"{
+		assert.that(stark.sePuedeCasarCon(stark1, solteroLanister))
+		assert.that(stark.sePuedeCasarCon(stark1, casadoLanister))
+		assert.notThat(stark.sePuedeCasarCon(stark1, stark2))
+		assert.that(stark.sePuedeCasarCon(stark1, guardia))
+	}
+	
+	test "Un guardia de la noche no se puede casar con nadie"{
+		assert.notThat(guardiaDeLaNoche.sePuedeCasarCon(guardia, solteroLanister))
+		assert.notThat(guardiaDeLaNoche.sePuedeCasarCon(guardia, stark1))
+		assert.notThat(guardiaDeLaNoche.sePuedeCasarCon(guardia, stark2))
+		assert.notThat(guardiaDeLaNoche.sePuedeCasarCon(guardia, casadoLanister))
+	}
+}
+
+describe "Punto 2"{
+	test "Lannister soltero se puede casar con lannister casado, pero lannister casado no se puede casar con nadie, entonces no se pueden casar"{
+		assert.throwsExceptionLike(noSePuedeConsumarElCasamientoException,{solteroLanister.validarQueSePuedanCasar(casadoLanister)})
+	}
+	
+	test "Lanister soltero se puede casar con cualquiera que pueda casarse con él, entonces se puede casar con un stark"{
+		assert.doesNotThrowException({solteroLanister.validarQueSePuedanCasar(stark1)})
+	}
+	
+	test "Un stark se puede casar con cualquier otro que no sea stark y que pueda casarse con él"{
+		assert.doesNotThrowException({stark1.validarQueSePuedanCasar(solteroLanister)})
+		assert.throwsExceptionLike(noSePuedeConsumarElCasamientoException,{stark1.validarQueSePuedanCasar(casadoLanister)})
+		assert.throwsExceptionLike(noSePuedeConsumarElCasamientoException,{stark1.validarQueSePuedanCasar(stark2)})
+	}
+	
+	test "Un guardia de la noche no se puede casar con nadie"{
+		assert.throwsExceptionLike(noSePuedeConsumarElCasamientoException,{guardia.validarQueSePuedanCasar(casadoLanister)})
+		assert.throwsExceptionLike(noSePuedeConsumarElCasamientoException,{guardia.validarQueSePuedanCasar(stark2)})
+		assert.throwsExceptionLike(noSePuedeConsumarElCasamientoException,{guardia.validarQueSePuedanCasar(solteroLanister)})
+		assert.throwsExceptionLike(noSePuedeConsumarElCasamientoException,{guardia.validarQueSePuedanCasar(stark1)})
+	}
+}
+
+describe "Punto 3"{
+	test "Un stark se puede casar con un lanister soltero, pero no con otro stark"{
+		stark1.casarseCon(solteroLanister)
+		assert.that(stark1.estaCasadoCon(solteroLanister))
+		assert.that(solteroLanister.estaCasadoCon(stark1))
+		assert.throwsExceptionLike(noSePuedeConsumarElCasamientoException,{stark1.validarQueSePuedanCasar(stark2)})
+		assert.notThat(stark1.estaCasadoCon(stark2))
+		assert.notThat(stark2.estaCasadoCon(stark1))
+	}
+}
+
+describe "Punto 4"{
+	test "La casa lanister es rica pq tiene más de 1000 monedas"{
+		assert.that(lannister.esRica())
+	}
+	
+	test "La casa stark es rica pq tiene más de 1000 monedas"{
+		assert.that(stark.esRica())
+	}
+	
+	test "La guardia de la noche noe es rica pq tiene menos de 1000 monedas"{
+		assert.notThat(guardiaDeLaNoche.esRica())
+	}
+}
+
+describe "Punto 5"{
+	method initialize(){
+		lannister.agregarMiembro(solteroLanister)
+		lannister.agregarMiembro(casadoLanister)
+		stark.agregarMiembro(stark1)
+		stark.agregarMiembro(stark2)
+		guardiaDeLaNoche.agregarMiembro(guardia)
+	}
+	
+	test "El patrimonio de un lanister es de 500000 porque el patrimonio total es de 1000000 y hay sólo dos miembros"{
+		assert.equals(500000, solteroLanister.patrimonio())
+		assert.equals(500000, casadoLanister.patrimonio())
+	}
+	
+	test "El patrimonio de un stark es de 50000 porque el patrimonio total es de 100000 y hay sólo dos miembros"{
+		assert.equals(50000, stark1.patrimonio())
+		assert.equals(50000, stark1.patrimonio())
+	}
+	
+	test "El patrimonio de un guardia de la noche es de 9000 porque el patrimonio total es de 900 y hay sólo un miembro"{
+		assert.equals(900, guardia.patrimonio())
+	}
+}
+
+describe "Punto 1 Parte 2"{
+	method  initialize(){
+		stark1.formarAlianza(stark2)
+	}
+	test "lanister soltero está sólo pq no tiene acompañantes"{
+		assert.that(solteroLanister.estaSolo())
+	}
+	
+	test "lanister casado está sólo pq no tiene acompañantes"{
+		assert.that(casadoLanister.estaSolo())
+	}
+	
+	test "stark1 no está sólo pq tiene a stark2 como acompaniante y viceversa"{
+		assert.notThat(stark1.estaSolo())
+		assert.notThat(stark2.estaSolo())
+	}
+	
+}
+
+describe "Punto 2 Parte 2"{
+	method  initialize(){
+		lannister.agregarMiembro(solteroLanister)
+		lannister.agregarMiembro(casadoLanister)
+		stark.agregarMiembro(stark1)
+		stark.agregarMiembro(stark2)
+		guardiaDeLaNoche.agregarMiembro(guardia)
+		stark1.formarAlianza(stark2)
+	}
+	
+	test "Los aliados de laniosterSoltero son él y lanisterCasado"{
+		assert.equals(#{casadoLanister, solteroLanister}, solteroLanister.aliados())
+	}
+	
+	test "Los aliados de stark1 son él, stark 2 y el guardia pq formó una alianza con él"{
+		stark1.formarAlianza(guardia)
+		assert.equals(#{guardia, stark2, stark1}, stark1.aliados())
+	}
+	
+	test "Los aliados de guardia son él y nadie más"{
+		assert.equals(#{guardia}, guardia.aliados())
+	}
+	
+}
+
+describe "Punto 3 Parte 2"{
+	method initialize(){
+		lannister.agregarMiembro(solteroLanister)
+		lannister.agregarMiembro(casadoLanister)
+		stark.agregarMiembro(stark1)
+		stark.agregarMiembro(stark2)
+		guardiaDeLaNoche.agregarMiembro(guardia)
+	}
+	
+	test "Un personaje muerto no es peligroso"{
+		assert.notThat(personajeMuerto.esPeligroso())
+	}
+	
+	test "Un personaje casado únicamente con un lannister es peligroso pq todos sus cónyuges son ricos"{
+		stark1.casarseCon(solteroLanister)
+		assert.that(stark1.esPeligroso())
+	}
+	
+	test "El guardia de la noche es peligroso si está aliado con stark1 porque su patrimonio supera los 10000 y pq es peligroso"{
+		guardia.formarAlianza(stark1)
+		assert.that(guardia.esPeligroso())
+	}
+
+}
